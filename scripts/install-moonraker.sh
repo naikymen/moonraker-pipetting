@@ -1,6 +1,15 @@
 #!/bin/bash
 # This script installs Moonraker on a Raspberry Pi machine running
-# Raspbian/Raspberry Pi OS based distributions.
+# Arch Linux (requiring yay for installing python-gpiod from the AUR).
+
+# Possible usage: https://moonraker.readthedocs.io/en/latest/installation/#installing-moonraker
+# export PARENT_PATH=${HOME}/Projects/GOSH/gosh-col-dev
+# export MOONRAKER_VENV=${PARENT_PATH}/moonraker/moonraker-env
+# ./scripts/install-moonraker.sh -z -x -d ${PARENT_PATH}/moonraker/printer_data
+
+# Possible startup command:
+# source moonraker-env/bin/activate
+# python moonraker/moonraker.py
 
 PYTHONDIR="${MOONRAKER_VENV:-${HOME}/moonraker-env}"
 SYSTEMDDIR="/etc/systemd/system"
@@ -30,18 +39,18 @@ cleanup_legacy() {
 # Step 3: Install packages
 install_packages()
 {
-    PKGLIST="python3-virtualenv python3-dev libopenjp2-7 python3-libgpiod"
-    PKGLIST="${PKGLIST} curl libcurl4-openssl-dev libssl-dev liblmdb-dev"
-    PKGLIST="${PKGLIST} libsodium-dev zlib1g-dev libjpeg-dev packagekit"
-    PKGLIST="${PKGLIST} wireless-tools"
+    PKGLIST="python-virtualenv openjpeg2"
+    PKGLIST="${PKGLIST} curl libcurl openssl lmdb"
+    PKGLIST="${PKGLIST} libsodium zlib packagekit"  # Is "libjpeg-dev" provided by openjpeg2 above?
+    PKGLIST="${PKGLIST} wireless_tools"
+
+    AURLIST="python-gpiod"  # https://aur.archlinux.org/packages/python-gpiod
 
     # Update system package info
-    report_status "Running apt-get update..."
-    sudo apt-get update --allow-releaseinfo-change
-
     # Install desired packages
-    report_status "Installing packages..."
-    sudo apt-get install --yes ${PKGLIST}
+    report_status "Running pacman install and update..."
+    sudo pacman -Syu ${PKGLIST}
+    yay -S ${AURLIST}
 }
 
 # Step 4: Create python virtual environment
@@ -56,7 +65,7 @@ create_virtualenv()
     fi
 
     if [ ! -d ${PYTHONDIR} ]; then
-        virtualenv -p /usr/bin/python3 ${PYTHONDIR}
+        python3 -m venv ${PYTHONDIR}
         #GET_PIP="${HOME}/get-pip.py"
         #curl https://bootstrap.pypa.io/pip/3.6/get-pip.py -o ${GET_PIP}
         #${PYTHONDIR}/bin/python ${GET_PIP}
@@ -241,12 +250,12 @@ SERVICE_FILE="${SYSTEMDDIR}/${INSTANCE_ALIAS}.service"
 
 # Run installation steps defined above
 verify_ready
-cleanup_legacy
+#cleanup_legacy
 install_packages
 create_virtualenv
 init_data_path
-install_script
-check_polkit_rules
+#install_script
+#check_polkit_rules
 if [ $DISABLE_SYSTEMCTL = "n" ]; then
     start_software
 fi
