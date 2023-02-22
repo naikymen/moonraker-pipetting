@@ -2,6 +2,10 @@
 
 For use with: https://github.com/naikymen/klipper-homing-extruder
 
+To accomplish the following:
+
+![Screenshot_20230222_203926.png](./docs/imgs/Screenshot_20230222_203926.png)
+
 #  Moonraker - API Web Server for Klipper
 
 Moonraker is a Python 3 based web server that exposes APIs with which
