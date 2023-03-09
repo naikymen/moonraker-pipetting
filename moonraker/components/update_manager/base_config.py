@@ -35,7 +35,7 @@ BASE_CONFIG: Dict[str, Dict[str, str]] = {
     },
     "klipper": {
         "moved_origin": "https://github.com/naikymen/klipper-homing-extruder.git",
-        "origin": "https://github.com/naikymen/klipper-homing-extruder.git",
+        "origin": "https://github.com/naikymen/klipper-for-cnc.git",
         "primary_branch": "pipetting",
         "requirements": "scripts/klippy-requirements.txt",
         "venv_args": "-p python2",
