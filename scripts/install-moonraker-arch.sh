@@ -50,6 +50,20 @@ cleanup_legacy() {
 # Step 3: Install packages
 install_packages()
 {
+<<<<<<< HEAD
+    PKGLIST="python-virtualenv openjpeg2"
+    PKGLIST="${PKGLIST} curl libcurl openssl lmdb"
+    PKGLIST="${PKGLIST} libsodium zlib packagekit"  # Is "libjpeg-dev" provided by openjpeg2 above?
+    PKGLIST="${PKGLIST} wireless_tools"
+
+    AURLIST="python-gpiod"  # https://aur.archlinux.org/packages/python-gpiod
+
+    # Update system package info
+    # Install desired packages
+    report_status "Running pacman install and update..."
+    sudo pacman -Syu ${PKGLIST}
+    yay -S ${AURLIST}
+=======
     # Update system package info
     report_status "Running apt-get update..."
     sudo apt-get update --allow-releaseinfo-change
@@ -74,6 +88,7 @@ install_packages()
     report_status "Installing Moonraker Dependencies:"
     report_status "${PKGS}"
     sudo apt-get install --yes ${PKGS}
+>>>>>>> master
 }
 
 # Step 4: Create python virtual environment

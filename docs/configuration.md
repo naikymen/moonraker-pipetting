@@ -1457,9 +1457,8 @@ info_tags:
     semantic version format, `vX.Y.Z`, where X, Y, and Z are all unsigned
     integer values.  For example, a repos first tag might be `v0.0.1`.
 
-    Moonraker can still update repos without tags, however as of 2/8/2023
-    the common front ends disable update controls when version information
-    is not reported by Moonraker.
+    Moonraker can update repos without tags, however front ends may disable
+    update controls when version information is not reported by Moonraker.
 
 ```ini
 # moonraker.conf
@@ -1468,17 +1467,15 @@ info_tags:
 # systemd service
 [update_manager extension_name]
 type: git_repo
-#   Can be git_repo or zip.  This value is set depending on how an extension
-#   chooses to deploy updates, see its documentation for details  This
-#   parameter must be provided.
+#   Currently must be git_repo.  This value is set depending on how an
+#   extension chooses to deploy updates, see its documentation for details.
+#   This parameter must be provided.
 channel: dev
 #   The update channel.  The available value differs depending on the
 #   "type" option.
 #      type: git_repo - May be dev or beta.  The dev channel will update to
 #                       the latest pushed commit, whereas the beta channel
 #                       will update to the latest tagged commit.
-#      type: zip      - May be be stable or beta.  When beta is specified
-#                       "pre-release" updates are available.
 #   The default is dev.
 path:
 #   The absolute path to the client's files on disk. This parameter must be
@@ -1513,14 +1510,6 @@ enable_node_updates:
 #   to package-lock.json.  Note that if your project does not have a
 #   package-lock.json in its root directory then the plugin will fail to load.
 #   Default is False.
-host_repo:
-#   The GitHub repo in which zipped releases are hosted.  Note that this does
-#   not need to match the repository in the "origin" option, as it is possible
-#   to use a central GitHub repository to host multiple extension builds.  As
-#   an example, Moonraker's repo hosts builds for both Moonraker and Klipper.
-#   This option defaults to the repo extracted from the "origin" option,
-#   however if the origin is not hosted on GitHub then this parameter must
-#   be provided.
 is_system_service: True
 #   This should be set to False for repos that are not installed as a service
 #   or do not need to restart a service after updates. This option sets the
@@ -1539,11 +1528,18 @@ managed_services:
 #       <name>    - The name configured in the extension's section header.
 #                   If the section header is [update_manager KlipperScreen]
 #                   then KlipperScreen would be a valid value.
-#       klipper   - The klipper service will be restarted after an update
-#       moonraker - The moonraker service will be restarted after an update
+#       klipper   - The Klipper service associated with this instance of
+#                   Moonraker will be restarted after an update.
+#       moonraker - The Moonraker service will be restarted after an update.
+#
+#   NOTE: Moonraker will resolve the service names for the "klipper" and
+#   "moonraker" services if they are not the default values.  Specific names
+#   such as "klipper-1" or "moonraker_2" should not be entered in this option.
+#
 #   When this option is specified it overrides the "is_system_service" option.
 #   Thus it is not required to specify both, only one or the other.  The
-#   default depends on "is_system_service" as explained above.
+#   default is no managed services if "is_system_service" is set to False,
+#   otherwise the default is the service named in the section header.
 refresh_interval:
 #   This overrides the refresh_interval set in the primary [update_manager]
 #   section.
@@ -1557,6 +1553,12 @@ info_tags:
 #   information, see your extension documentation for details on configuration.
 #   The default is an empty list.
 ```
+
+!!! Note
+    If this application requires a restart after an update it may be necessary
+    to grant Moonraker permission to manage its service. See the
+    [allowed services](#allowed-services) section for details on which
+    services Moonraker is allowed to manage and how to add additional services.
 
 ### `[mqtt]`
 
@@ -2050,18 +2052,24 @@ domain: switch
 
 
 ### `[notifier]`
-Enables the notification service. Multiple "notifiers" may be configured,
-each with their own section, ie: `[notifier my_discord_server]`, `[notifier my_phone]`.
 
-All notifiers require an url for a service to be set up. Moonraker uses [Apprise](https://github.com/caronc/apprise) internally.
-You can find the available services and their corresponding urls here: [https://github.com/caronc/apprise/wiki](https://github.com/caronc/apprise/wiki).
+Enables the notification service. Multiple "notifiers" may be configured,
+each with their own section, ie: `[notifier my_discord_server]`,
+`[notifier my_phone]`.
+
+All notifiers require an url for a service to be set up. Moonraker depends on
+[Apprise](https://github.com/caronc/apprise) to emit notifications.
+Available services and their corresponding at urls may be found on the
+[Apprise Wiki](https://github.com/caronc/apprise/wiki).
 
 ```ini
 # moonraker.conf
 
 [notifier telegram]
 url: tgram://{bottoken}/{ChatID}
-#   The url for your notifier. This URL accepts Jinja2 templates, so you can use [secrets] if you want.
+#   The url for your notifier. This URL accepts Jinja2 templates,
+#   so you can use [secrets] if you want.  This parameter must be
+#   provided.
 events: *
 #   The events this notifier should trigger to. '*' means all events.
 #   You can use multiple events, comma separated.
@@ -2072,18 +2080,52 @@ events: *
 #      cancelled
 #      paused
 #      resumed
+#   This parameter must be provided.
 body: "Your printer status has changed to {event_name}"
-#   The body of the notification. This option accepts Jinja2 templates.
-#   You can use {event_name} to print the current event trigger name. And {event_args} for
-#   the arguments that came with it. When using the notify functionality in a macro context, you can
-#   use {event_message} to print out your message.
+#   The body of the notification. This option accepts Jinja2 templates, where
+#   the template is passed a context containing the following fields:
+#      event_name: The name of the event that triggered the notification
+#                  (ie: started, complete, error, etc)
+#      event_args: A list containing the arguments passed to the event.
+#                  See the "Tip" below for additional details on this field.
+#      event_message: An additional message passed to the notification when
+#                     triggered.  This is commonly used when the notification
+#                     is received from Klippy using a gcode_macro.
+#   The default is a body containining the "name" of the notification as entered
+#   in the section header.
 title:
-#   The optional title of the notification. Just as the body, this option accepts Jinja2 templates.
+#   The optional title of the notification. This option accepts Jinja2 templates,
+#   the template will receive a context with the same fields as the body.  The
+#   default is an empty string as the title.
 attach:
-#   An optional attachment. Can be an url of a webcam for example. Note: this isn't available for all
-#   notification services. You can check if it's supported on the Apprise Wiki. Be aware that links in
-#   your internal network can only be viewed within your network.
+#   One or more items to attach to the notification. This may be a path to a
+#   local file or a url (such as a webcam snapshot).  Multiple attachments must be
+#   separated by a newline.  This option accepts Jinja2 templates, the tempalte
+#   will recieve the same context as the "body" and "title" options.  The default
+#   is no attachment will be sent with the notification.
+#
+#   Note: Attachments are not available for all notification services, you can
+#   check if it's supported on the Apprise Wiki.  Be aware that links to items
+#   hosted on your local network can only be viewed within that network.
 ```
+
+!!! Tip
+    The `event_args` field of the Jinja2 context passed to templates in
+    this section receives a list of "arguments" passed to the event.  For
+    those familiar with Python this list is known as "variable arguments".
+    Currently the notifier only supports two kinds of events: those
+    triggered by a change in the job state and those triggered from a remote
+    method call frm a `gcode_macro`.
+
+    For `remote method` events the `event_args` field will always be
+    an empty list.  For `job state` events the `event_args` field will
+    contain two items. The first item (`event_args[0]`) contains the
+    job state recorded prior to the event, the second item (`event_args[1]`)
+    contains the current job state.  In most cases users will be interested
+    in the current job state (`event_args[1]`).
+
+    The `job state` is a dict that contains the values reported by
+    Klipper's [print_stats](printer_objects.md#print_stats) object.
 
 #### An example:
 ```ini

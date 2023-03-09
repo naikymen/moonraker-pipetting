@@ -18,7 +18,7 @@ import time
 from copy import deepcopy
 from inotify_simple import INotify
 from inotify_simple import flags as iFlags
-from utils import MOONRAKER_PATH
+from ...utils import source_info
 
 # Annotation imports
 from typing import (
@@ -40,14 +40,14 @@ from typing import (
 
 if TYPE_CHECKING:
     from inotify_simple import Event as InotifyEvent
-    from confighelper import ConfigHelper
-    from websockets import WebRequest
-    from klippy_connection import KlippyConnection
-    from components import database
-    from components import klippy_apis
-    from components import shell_command
-    from components.job_queue import JobQueue
-    from components.job_state import JobState
+    from ...confighelper import ConfigHelper
+    from ...common import WebRequest
+    from ...klippy_connection import KlippyConnection
+    from .. import database
+    from .. import klippy_apis
+    from .. import shell_command
+    from ..job_queue import JobQueue
+    from ..job_state import JobState
     StrOrPath = Union[str, pathlib.Path]
     DBComp = database.MoonrakerDatabase
     APIComp = klippy_apis.KlippyAPI
@@ -70,7 +70,8 @@ class FileManager:
         self.file_paths: Dict[str, str] = {}
         app_args = self.server.get_app_args()
         self.datapath = pathlib.Path(app_args["data_path"])
-        self.add_reserved_path("moonraker", MOONRAKER_PATH, False)
+        srcdir = str(source_info.source_path())
+        self.add_reserved_path("moonraker", srcdir, False)
         db: DBComp = self.server.load_component(config, "database")
         db_path = db.get_database_path()
         self.add_reserved_path("database", db_path, False)
@@ -618,11 +619,7 @@ class FileManager:
                     f"Cannot create archive at '{dest_path}'.  Parent "
                     "directory does not exist."
                 )
-            items: Union[str, List[str]] = web_request.get("items")
-            if isinstance(items, str):
-                items = [
-                    item.strip() for item in items.split(",") if item.strip()
-                ]
+            items = web_request.get_list("items")
             if not items:
                 raise self.server.error(
                     "At least one file or directory must be specified"
@@ -791,7 +788,7 @@ class FileManager:
                 except Exception:
                     pass
                 raise
-        return result
+            return result
 
     def _parse_upload_args(self,
                            upload_args: Dict[str, Any]
@@ -2143,23 +2140,19 @@ class InotifyObserver(BaseFileSystemObserver):
                 source_root, source_path)
             result['source_item'] = {'path': src_rel_path, 'root': source_root}
         key = f"{action}-{root}-{rel_path}"
-        if sync_fut is not None:
-            # Delay this notification so that it occurs after an item
-            logging.debug(f"Syncing notification: {full_path}")
-            self.event_loop.register_callback(
-                self._sync_with_request, result, sync_fut, key
-            )
-        else:
-            self.file_manager.cancel_notification(key)
-            self.server.send_event("file_manager:filelist_changed", result)
+        self.event_loop.create_task(
+            self._finish_notify(result, sync_fut, key)
+        )
 
-    async def _sync_with_request(
+    async def _finish_notify(
         self,
         result: Dict[str, Any],
-        sync_fut: asyncio.Future,
+        sync_fut: Optional[asyncio.Future],
         notify_key: str
     ) -> None:
-        await sync_fut
+        if sync_fut is not None:
+            logging.debug(f"Syncing notification: {notify_key}")
+            await sync_fut
         self.file_manager.cancel_notification(notify_key)
         await asyncio.sleep(.005)
         self.server.send_event("file_manager:filelist_changed", result)
