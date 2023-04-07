@@ -11,22 +11,63 @@
 # source moonraker-env/bin/activate
 # python moonraker/moonraker.py
 
+# Force script to exit if an error occurs
+set -e
+
+
+
+
+
+# Step 1: define variables
+# Find SRCDIR from the pathname of this script
+SRCDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
+# Directory to where you cloned "pipetting-klipper-group.git"
+KLIPPER_GROUP=`pwd`
+# Misc variables
 SYSTEMDDIR="/etc/systemd/system"
-REBUILD_ENV="${MOONRAKER_REBUILD_ENV:-n}"
-FORCE_DEFAULTS="${MOONRAKER_FORCE_DEFAULTS:-n}"
-DISABLE_SYSTEMCTL="${MOONRAKER_DISABLE_SYSTEMCTL:-n}"
-SKIP_POLKIT="${MOONRAKER_SKIP_POLKIT:-n}"
+REBUILD_ENV="${MOONRAKER_REBUILD_ENV:-n}"              # "n" by default
+FORCE_DEFAULTS="${MOONRAKER_FORCE_DEFAULTS:-n}"        # "n" by default
+DISABLE_SYSTEMCTL="${MOONRAKER_DISABLE_SYSTEMCTL:-n}"  # "n" by default
+SKIP_POLKIT="${MOONRAKER_SKIP_POLKIT:-n}"              # "n" by default
 CONFIG_PATH="${MOONRAKER_CONFIG_PATH}"
 LOG_PATH="${MOONRAKER_LOG_PATH}"
-DATA_PATH="${MOONRAKER_DATA_PATH}"
-INSTANCE_ALIAS="${MOONRAKER_ALIAS:-moonraker}"
+DATA_PATH="${MOONRAKER_DATA_PATH:-${KLIPPER_GROUP}/printer_data}"
+INSTANCE_ALIAS="${MOONRAKER_ALIAS:-moonraker}"         # "moonraker" by default
 SERVICE_VERSION="1"
 MACHINE_PROVIDER="systemd_cli"
+# Modified PYTHONDIR to use KLIPPER_GROUP (pwd) instead of HOME by default.
+PYTHONDIR="${MOONRAKER_VENV:-${KLIPPER_GROUP}/moonraker-env}"
 
-# Modified PYTHONDIR to use DATA_PATH instead of HOME by default.
-PYTHONDIR="${MOONRAKER_VENV:-${DATA_PATH}/moonraker-env}"
+# Parse command line arguments
+while getopts "rfzxc:l:d:a:" arg; do
+    case $arg in
+        r) REBUILD_ENV="y";;
+        f) FORCE_DEFAULTS="y";;
+        z) DISABLE_SYSTEMCTL="y";;
+        x) SKIP_POLKIT="y";;
+        c) CONFIG_PATH=$OPTARG;;
+        l) LOG_PATH=$OPTARG;;
+        d) DATA_PATH=$OPTARG;;
+        a) INSTANCE_ALIAS=$OPTARG;;
+    esac
+done
 
-# Step 1: missing?
+# Undocumented DATA_PATH logic
+if [ -z "${DATA_PATH}" ]; then
+    if [ "${INSTANCE_ALIAS}" = "moonraker" ]; then
+        DATA_PATH="${DATA_PATH}/printer_data"
+    else
+        num="$( echo ${INSTANCE_ALIAS} | grep  -Po "moonraker[-_]?\K\d+" || true )"
+        if [ -n "${num}" ]; then
+            DATA_PATH="${HOME}/printer_${num}_data"
+        else
+            DATA_PATH="${HOME}/${INSTANCE_ALIAS}_data"
+        fi
+    fi
+fi
+
+# Undocumented SERVICE_FILE logic
+SERVICE_FILE="${SYSTEMDDIR}/${INSTANCE_ALIAS}.service"
 
 # Step 2: Clean up legacy installation
 cleanup_legacy() {
@@ -44,7 +85,7 @@ cleanup_legacy() {
 install_packages()
 {
     PKGLIST="python-virtualenv openjpeg2"
-    PKGLIST="${PKGLIST} curl libcurl openssl lmdb"
+    PKGLIST="${PKGLIST} curl openssl lmdb"
     PKGLIST="${PKGLIST} libsodium zlib packagekit"  # Is "libjpeg-dev" provided by openjpeg2 above?
     PKGLIST="${PKGLIST} wireless_tools"
 
@@ -52,15 +93,15 @@ install_packages()
 
     # Update system package info
     # Install desired packages
-    report_status "Running pacman install and update..."
-    sudo pacman -Syu ${PKGLIST}
-    yay -S ${AURLIST}
+    report_status "Running pacman and yay install (-S)"
+    sudo pacman -S ${PKGLIST} --needed
+    yay -S ${AURLIST} --needed --answerclean None --answerdiff None --answeredit None
 }
 
 # Step 4: Create python virtual environment
 create_virtualenv()
 {
-    report_status "Installing python virtual environment..."
+    report_status "Installing python virtual environment at ${PYTHONDIR}"
 
     # If venv exists and user prompts a rebuild, then do so
     if [ -d ${PYTHONDIR} ] && [ $REBUILD_ENV = "y" ]; then
@@ -217,41 +258,6 @@ verify_ready()
     fi
 }
 
-# Force script to exit if an error occurs
-set -e
-
-# Find SRCDIR from the pathname of this script
-SRCDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
-
-# Parse command line arguments
-while getopts "rfzxc:l:d:a:" arg; do
-    case $arg in
-        r) REBUILD_ENV="y";;
-        f) FORCE_DEFAULTS="y";;
-        z) DISABLE_SYSTEMCTL="y";;
-        x) SKIP_POLKIT="y";;
-        c) CONFIG_PATH=$OPTARG;;
-        l) LOG_PATH=$OPTARG;;
-        d) DATA_PATH=$OPTARG;;
-        a) INSTANCE_ALIAS=$OPTARG;;
-    esac
-done
-
-if [ -z "${DATA_PATH}" ]; then
-    if [ "${INSTANCE_ALIAS}" = "moonraker" ]; then
-        DATA_PATH="${HOME}/printer_data"
-    else
-        num="$( echo ${INSTANCE_ALIAS} | grep  -Po "moonraker[-_]?\K\d+" || true )"
-        if [ -n "${num}" ]; then
-            DATA_PATH="${HOME}/printer_${num}_data"
-        else
-            DATA_PATH="${HOME}/${INSTANCE_ALIAS}_data"
-        fi
-    fi
-fi
-
-SERVICE_FILE="${SYSTEMDDIR}/${INSTANCE_ALIAS}.service"
-
 # Run installation steps defined above
 verify_ready
 #cleanup_legacy
@@ -260,6 +266,6 @@ create_virtualenv
 init_data_path
 #install_script
 #check_polkit_rules
-if [ $DISABLE_SYSTEMCTL = "n" ]; then
-    start_software
-fi
+#if [ $DISABLE_SYSTEMCTL = "n" ]; then
+#    start_software
+#fi
