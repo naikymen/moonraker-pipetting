@@ -50,7 +50,6 @@ cleanup_legacy() {
 # Step 3: Install packages
 install_packages()
 {
-<<<<<<< HEAD
     PKGLIST="python-virtualenv openjpeg2"
     PKGLIST="${PKGLIST} curl libcurl openssl lmdb"
     PKGLIST="${PKGLIST} libsodium zlib packagekit"  # Is "libjpeg-dev" provided by openjpeg2 above?
@@ -63,32 +62,6 @@ install_packages()
     report_status "Running pacman install and update..."
     sudo pacman -Syu ${PKGLIST}
     yay -S ${AURLIST}
-=======
-    # Update system package info
-    report_status "Running apt-get update..."
-    sudo apt-get update --allow-releaseinfo-change
-
-    system_deps="${SRCDIR}/scripts/system-dependencies.json"
-    if [ -f "${system_deps}" ]; then
-        if [ ! -x "$(command -v python3)" ]; then
-            report_status "Installing python3 base package..."
-            sudo apt-get install --yes python3
-        fi
-        PKGS="$( cat ${system_deps} | python3 -c "${package_decode_script}" )"
-
-    else
-        echo "Error: system-dependencies.json not found, falling back to legacy pacakge list"
-        PKGLIST="${PKGLIST} python3-virtualenv python3-dev python3-libgpiod liblmdb-dev"
-        PKGLIST="${PKGLIST} libopenjp2-7 libsodium-dev zlib1g-dev libjpeg-dev packagekit"
-        PKGLIST="${PKGLIST} wireless-tools curl"
-        PKGS=${PKGLIST}
-    fi
-
-    # Install desired packages
-    report_status "Installing Moonraker Dependencies:"
-    report_status "${PKGS}"
-    sudo apt-get install --yes ${PKGS}
->>>>>>> master
 }
 
 # Step 4: Create python virtual environment
