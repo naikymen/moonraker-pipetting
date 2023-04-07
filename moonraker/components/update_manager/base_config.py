@@ -18,29 +18,29 @@ if TYPE_CHECKING:
     from ...confighelper import ConfigHelper
     from ..database import MoonrakerDatabase
 
-KLIPPER_DEFAULT_PATH = os.path.expanduser("~/klipper")
-KLIPPER_DEFAULT_EXEC = os.path.expanduser("~/klippy-env/bin/python")
+KLIPPER_DEFAULT_PATH = os.path.expanduser("~/klipper-group/klipper")
+KLIPPER_DEFAULT_EXEC = os.path.expanduser("~/klipper-group/klippy-env/bin/python")
 
 BASE_CONFIG: Dict[str, Dict[str, str]] = {
     "moonraker": {
-        "origin": "https://github.com/naikymen/moonraker-pipetting.git",
+        "origin": "https://gitlab.com/pipettin-bot/forks/moonraker.git",
         "primary_branch": "pipetting",
         "requirements": "scripts/moonraker-requirements.txt",
         "venv_args": "-p python3",
-        "install_script": "scripts/install-moonraker.sh",
-        "host_repo": "naikymen/moonraker-pipetting",
+        "install_script": "scripts/install-moonraker-arch.sh",
+        "host_repo": "https://gitlab.com/pipettin-bot/forks/moonraker",
         "env": sys.executable,
         "path": str(source_info.source_path()),
         "managed_services": "moonraker"
     },
     "klipper": {
-        "moved_origin": "https://github.com/naikymen/klipper-homing-extruder.git",
-        "origin": "https://github.com/naikymen/klipper-homing-extruder.git",
+        "moved_origin": "https://gitlab.com/pipettin-bot/forks/klipper.git",
+        "origin": "https://gitlab.com/pipettin-bot/forks/klipper.git",
         "primary_branch": "pipetting",
         "requirements": "scripts/klippy-requirements.txt",
-        "venv_args": "-p python2",
+        "venv_args": "-p python3",
         "install_script": "scripts/install-octopi.sh",
-        "host_repo": "naikymen/moonraker-pipetting",
+        "host_repo": "https://gitlab.com/pipettin-bot/forks/klipper",
         "managed_services": "klipper"
     }
 }
