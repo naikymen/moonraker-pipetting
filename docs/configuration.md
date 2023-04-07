@@ -2203,6 +2203,8 @@ ambient_sensor:
 #       ambient_sensor: temperature_sensor chamber
 #   If no ambient_sensor is configured then SimplyPrint will use the extruder
 #   to estimate ambient temperature when the heater is idle and cool.
+firmware_link:
+# Defaults to "https://github.com/Klipper3d/klipper".
 ```
 
 !!! Note

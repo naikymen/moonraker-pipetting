@@ -147,6 +147,10 @@ class SimplyPrint(Subscribable):
                     f"prefixes: {fs_prefixes}"
                 )
 
+        # NOTE: Default to Kevin's repo, allowing config from a [simplyprint] section.
+        self.firmware_link: str = ""
+        self.firmware_link = config.get("filament_sensor", "https://github.com/Klipper3d/klipper")
+
         # Register State Events
         self.server.register_event_handler(
             "server:klippy_started", self._on_klippy_startup)
@@ -984,6 +988,9 @@ class SimplyPrint(Subscribable):
         self.send_sp("machine_data", data)
 
     def _send_firmware_data(self) -> None:
+        # NOTE: kinfo ultimately comes from klippy_apis.get_klippy_info,
+        #       through "klippy_connection.KlippyConnection._check_ready" and 
+        #       lastly from "moonraker.Server.get_klippy_info".
         kinfo = self.server.get_klippy_info()
         if "software_version" not in kinfo:
             return
@@ -1002,7 +1009,7 @@ class SimplyPrint(Subscribable):
             "firmware": "Klipper",
             "firmware_version": version,
             "firmware_date": firmware_date,
-            "firmware_link": "https://github.com/Klipper3d/klipper",
+            "firmware_link": self.firmware_link,
         }
         diff = self._get_object_diff(fw_info, self.cache.firmware_info)
         if diff:

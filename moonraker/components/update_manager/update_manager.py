@@ -75,25 +75,36 @@ class UpdateManager:
             raise config.error(
                 f"Unsupported channel '{self.channel}' in section"
                 " [update_manager]")
-        self.app_config = base_config.get_base_configuration(
-            config, self.channel
-        )
+        
+        # NOTE: "self.app_config" is a "ConfigHelper" object,
+        #       created from "base_config.get_base_configuration".
+        self.app_config = base_config.get_base_configuration(config, self.channel)
+        
         auto_refresh_enabled = config.getboolean('enable_auto_refresh', False)
         self.cmd_helper = CommandHelper(config, self.get_updaters)
         self.updaters: Dict[str, BaseDeploy] = {}
         if config.getboolean('enable_system_updates', True):
             self.updaters['system'] = PackageDeploy(config, self.cmd_helper)
         mcfg = self.app_config["moonraker"]
-        kcfg = self.app_config["klipper"]
+        
+        # NOTE: Set a default value for the "kcfg" attribute, from the
+        #       dictionary at "base_config.py".
+        # NOTE: Because "app_config" is a "ConfigHelper" object, the returned
+        #       item is also of that class.
+        self.kcfg = self.app_config["klipper"]
+        
         mclass = get_deploy_class(mcfg.get("path"))
         self.updaters['moonraker'] = mclass(mcfg, self.cmd_helper)
-        kclass = BaseDeploy
-        if (
-            os.path.exists(kcfg.get("path")) and
-            os.path.exists(kcfg.get("env"))
-        ):
-            kclass = get_deploy_class(kcfg.get("path"))
-        self.updaters['klipper'] = kclass(kcfg, self.cmd_helper)
+        
+        # NOTE: Commented for custom Klipper config entry support from moonraker.cfg
+        #       They were moved to the for loop below.
+        # kclass = BaseDeploy
+        # if (
+        #     os.path.exists(kcfg.get("path")) and
+        #     os.path.exists(kcfg.get("env"))
+        # ):
+        #     kclass = get_deploy_class(kcfg.get("path"))
+        # self.updaters['klipper'] = kclass(kcfg, self.cmd_helper)
 
         # TODO: The below check may be removed when invalid config options
         # raise a config error.
@@ -107,14 +118,54 @@ class UpdateManager:
                 "for details on client configuration.")
         client_sections = config.get_prefix_sections("update_manager ")
         for section in client_sections:
+            # NOTE: "config" is a "ConfigHelper" object, and "cfg", 
+            #       which is returned by its "__getitem__" method,
+            #       is also a "ConfigHelper" object.
             cfg = config[section]
+
+            # NOTE: Get the config section name (i.e. "klipper" from 
+            #       "update_manager klipper").
             name = section.split()[-1]
+            
             if name in self.updaters:
                 self.server.add_warning(
                     f"[update_manager]: Extension {name} already added"
                 )
                 continue
+            
+            # NOTE: Support custom Klipper config entry from moonraker.cfg  
             try:
+                if name == "klipper":
+                    
+                    # NOTE: The commented commands above were moved here.
+                    logging.info(f"Parsing klipper config section: {cfg.get_options()}" )
+                    klipper_section_opts = cfg.get_options()
+
+                    # NOTE: The "get" method must be used to mark every 
+                    #       option as "parsed" (using "_get_option"
+                    #       internally) to avoid errors.
+                    # NOTE: Update options from base_config.py using the 
+                    #       ones from the configuration file.
+                    for opt in list(klipper_section_opts):
+                        val = cfg.get(opt)
+                        logging.info(f"Updating opt='{opt}' with val='{val}'")
+                        if self.kcfg.has_option(opt):
+                            self.kcfg.set_option(opt, val)
+                    
+                    # NOTE: Setup default deploy class (?)
+                    kclass = BaseDeploy
+                    # NOTE: Override default deploy class if the
+                    #       provided settings are valid (?)
+                    if (os.path.exists(self.kcfg.get("path")) and
+                        os.path.exists(self.kcfg.get("env"))):
+                        kclass = get_deploy_class(self.kcfg.get("path"))
+                    
+                    # NOTE: Save the deploy class (?)
+                    self.updaters['klipper'] = kclass(self.kcfg, self.cmd_helper)
+                    
+                    logging.info(f"Parsed klipper settings: {self.kcfg.get_options()}\n" )
+                    continue
+                
                 client_type = cfg.get("type")
                 if client_type in ["web", "web_beta"]:
                     self.updaters[name] = WebClientDeploy(cfg, self.cmd_helper)
@@ -211,7 +262,13 @@ class UpdateManager:
         db: DBComp = self.server.lookup_component('database')
         db.insert_item("moonraker", "update_manager.klipper_path", kpath)
         db.insert_item("moonraker", "update_manager.klipper_exec", executable)
-        kcfg = self.app_config["klipper"]
+        
+        # NOTE: Custom Klipper config entry support from moonraker.cfg  
+        # kcfg = self.app_config["klipper"]
+        # NOTE: kcfg = self.app_config["klipper"] fails,
+        #       because it was commented out from base config.
+        kcfg = self.kcfg
+
         kcfg.set_option("path", kpath)
         kcfg.set_option("env", executable)
         need_notification = not isinstance(kupdater, AppDeploy)

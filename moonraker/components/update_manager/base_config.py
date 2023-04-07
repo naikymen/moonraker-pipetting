@@ -40,9 +40,9 @@ BASE_CONFIG: Dict[str, Dict[str, str]] = {
         "primary_branch": "pipetting",
         "requirements": "scripts/klippy-requirements.txt",
         "venv_args": "-p python3",
-        "install_script": "scripts/install-octopi.sh",
-        "host_repo": "https://gitlab.com/pipettin-bot/forks/klipper",
-        "managed_services": "klipper"
+        # "install_script": "scripts/install-octopi.sh",  # NOTE: not yet supported.
+        "host_repo": "https://gitlab.com/pipettin-bot/forks/klipper"
+        # "managed_services": "klipper"
     }
 }
 
@@ -50,8 +50,10 @@ def get_base_configuration(config: ConfigHelper, channel: str) -> ConfigHelper:
     server = config.get_server()
     base_cfg = copy.deepcopy(BASE_CONFIG)
     app_type = "zip" if channel == "stable" else "git_repo"
+    # Moonraker
     base_cfg["moonraker"]["channel"] = channel
     base_cfg["moonraker"]["type"] = app_type
+    # Klipper
     base_cfg["klipper"]["channel"] = channel
     base_cfg["klipper"]["type"] = app_type
     db: MoonrakerDatabase = server.lookup_component('database')
