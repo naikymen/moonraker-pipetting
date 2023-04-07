@@ -11,7 +11,6 @@
 # source moonraker-env/bin/activate
 # python moonraker/moonraker.py
 
-PYTHONDIR="${MOONRAKER_VENV:-${HOME}/moonraker-env}"
 SYSTEMDDIR="/etc/systemd/system"
 REBUILD_ENV="${MOONRAKER_REBUILD_ENV:-n}"
 FORCE_DEFAULTS="${MOONRAKER_FORCE_DEFAULTS:-n}"
@@ -24,16 +23,10 @@ INSTANCE_ALIAS="${MOONRAKER_ALIAS:-moonraker}"
 SERVICE_VERSION="1"
 MACHINE_PROVIDER="systemd_cli"
 
-package_decode_script=$( cat << EOF
-import sys
-import json
-try:
-  ret = json.load(sys.stdin)
-except Exception:
-  exit(0)
-sys.stdout.write(' '.join(ret['debian']))
-EOF
-)
+# Modified PYTHONDIR to use DATA_PATH instead of HOME by default.
+PYTHONDIR="${MOONRAKER_VENV:-${DATA_PATH}/moonraker-env}"
+
+# Step 1: missing?
 
 # Step 2: Clean up legacy installation
 cleanup_legacy() {
