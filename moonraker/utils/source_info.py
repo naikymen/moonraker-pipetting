@@ -16,9 +16,15 @@ from typing import (
 )
 
 def package_path() -> pathlib.Path:
+    # When a module is loaded from a file in Python, __file__ is set to its path.
+    # https://stackoverflow.com/a/9271479/11524079
+    # Because "source_info" resides at "moonraker/moonraker/utils/",
+    # its grandparent is "moonraker/".
     return pathlib.Path(__file__).parent.parent
 
 def source_path() -> pathlib.Path:
+    # Because "source_info" resides at "moonraker/moonraker/utils/",
+    # its grand-grandparent is "../" (i.e. "pipetting-klipper-group").
     return package_path().parent
 
 def is_git_repo(src_path: Optional[pathlib.Path] = None) -> bool:

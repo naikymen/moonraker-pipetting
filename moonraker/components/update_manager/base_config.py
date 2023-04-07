@@ -30,6 +30,7 @@ BASE_CONFIG: Dict[str, Dict[str, str]] = {
         "install_script": "scripts/install-moonraker-arch.sh",
         "host_repo": "https://gitlab.com/pipettin-bot/forks/moonraker",
         "env": sys.executable,
+        # This will return the path to "moonraker/"
         "path": str(source_info.source_path()),
         "managed_services": "moonraker"
     },
