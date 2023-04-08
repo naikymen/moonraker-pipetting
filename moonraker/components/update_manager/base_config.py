@@ -30,7 +30,7 @@ BASE_CONFIG: Dict[str, Dict[str, str]] = {
         "install_script": "scripts/install-moonraker-arch.sh",
         "host_repo": "https://gitlab.com/pipettin-bot/forks/moonraker",
         "env": sys.executable,
-        # This will return the path to "moonraker/"
+        # NOTE: This will return the path to "moonraker/"
         "path": str(source_info.source_path()),
         "managed_services": "moonraker"
     },
@@ -40,9 +40,11 @@ BASE_CONFIG: Dict[str, Dict[str, str]] = {
         "primary_branch": "pipetting",
         "requirements": "scripts/klippy-requirements.txt",
         "venv_args": "-p python3",
-        # "install_script": "scripts/install-octopi.sh",  # NOTE: not yet supported.
-        "host_repo": "https://gitlab.com/pipettin-bot/forks/klipper"
-        # "managed_services": "klipper"
+        "install_script": "scripts/install-octopi.sh",  # NOTE: not yet supported.
+        "host_repo": "https://gitlab.com/pipettin-bot/forks/klipper",
+        "managed_services": "klipper",
+        # NOTE: This will return the path to "moonraker/../"
+        "path": str(source_info.source_path().parent)
     }
 }
 
@@ -57,10 +59,7 @@ def get_base_configuration(config: ConfigHelper, channel: str) -> ConfigHelper:
     base_cfg["klipper"]["channel"] = channel
     base_cfg["klipper"]["type"] = app_type
     db: MoonrakerDatabase = server.lookup_component('database')
-    base_cfg["klipper"]["path"] = db.get_item(
-        "moonraker", "update_manager.klipper_path", KLIPPER_DEFAULT_PATH
-    ).result()
-    base_cfg["klipper"]["env"] = db.get_item(
-        "moonraker", "update_manager.klipper_exec", KLIPPER_DEFAULT_EXEC
-    ).result()
+    base_cfg["klipper"]["path"] = db.get_item("moonraker", "update_manager.klipper_path", KLIPPER_DEFAULT_PATH).result()
+    base_cfg["klipper"]["env"] = db.get_item("moonraker", "update_manager.klipper_exec", KLIPPER_DEFAULT_EXEC).result()
+    
     return config.read_supplemental_dict(base_cfg)
