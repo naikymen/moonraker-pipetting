@@ -149,6 +149,7 @@ class ShellCommand:
         self.cancelled = False
         self.return_code: Optional[int] = None
         self.run_lock = asyncio.Lock()
+        logging.info(f"Running command {self.command}")
 
     async def cancel(self, sig_idx: int = 1) -> None:
         if self.cancelled:
@@ -276,7 +277,7 @@ class ShellCommand:
                 await asyncio.sleep(.5)
             self.factory.remove_running_command(self)
             raise ShellCommandError(
-                f"Error running shell command: '{self.name}'",
+                f"Error running shell command: '{self.name}' with return code '{self.return_code}' and {str(stdout)} {str(stderr)}",
                 self.return_code, stdout, stderr)
 
     async def _create_subprocess(
@@ -335,8 +336,8 @@ class ShellCommand:
         elif not complete:
             msg = f"Command ({self.name}) timed out"
         else:
-            msg = f"Command ({self.name}) exited with return code" \
-                f" {self.return_code}"
+            msg = f"Command ({self.name}) failed with return code {self.return_code}"
+            # msg += f" and stdout='{str(self.proc.stdout)}' stderr='{str(self.proc.stderr)}'"
         if log_complete:
             logging.info(msg)
         return success
