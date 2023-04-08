@@ -14,6 +14,9 @@ from typing import (
     Dict
 )
 
+import logging
+from pprint import pprint, pformat
+
 if TYPE_CHECKING:
     from ...confighelper import ConfigHelper
     from ..database import MoonrakerDatabase
@@ -44,7 +47,7 @@ BASE_CONFIG: Dict[str, Dict[str, str]] = {
         "host_repo": "https://gitlab.com/pipettin-bot/forks/klipper",
         "managed_services": "klipper",
         # NOTE: This will return the path to "moonraker/../"
-        "path": str(source_info.source_path().parent)
+        "path": str(source_info.source_path().parent) + "/klipper"
     }
 }
 
@@ -62,4 +65,6 @@ def get_base_configuration(config: ConfigHelper, channel: str) -> ConfigHelper:
     base_cfg["klipper"]["path"] = db.get_item("moonraker", "update_manager.klipper_path", KLIPPER_DEFAULT_PATH).result()
     base_cfg["klipper"]["env"] = db.get_item("moonraker", "update_manager.klipper_exec", KLIPPER_DEFAULT_EXEC).result()
     
+    logging.info("Using base configuration: \n" + pformat(base_cfg))
+
     return config.read_supplemental_dict(base_cfg)
