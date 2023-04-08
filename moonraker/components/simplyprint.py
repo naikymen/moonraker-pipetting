@@ -149,7 +149,7 @@ class SimplyPrint(Subscribable):
 
         # NOTE: Default to Kevin's repo, allowing config from a [simplyprint] section.
         self.firmware_link: str = ""
-        self.firmware_link = config.get("filament_sensor", "https://github.com/Klipper3d/klipper")
+        self.firmware_link = config.get("firmware_link", "https://github.com/Klipper3d/klipper")
 
         # Register State Events
         self.server.register_event_handler(
