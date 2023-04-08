@@ -992,8 +992,10 @@ class GitRepo:
                 "Attempting to repair loose objects..."
             )
         try:
-            await self.cmd_helper.run_cmd_with_response(
-                "find .git/objects/ -type f -empty | xargs rm -f",
+            # logging.info(f"Running command on working directory: '{str(self.git_path)}'")
+            await self.cmd_helper.run_cmd_with_response(  # Actually 'exec_cmd'
+                # "find .git/objects/ -type f -empty | xargs rm -f",
+                "find .git/objects/ -type f -empty -delete",
                 timeout=10., retries=1, cwd=str(self.git_path))
             await self._run_git_cmd_async(
                 "fetch --all -p", retries=1, fix_loose=False)
