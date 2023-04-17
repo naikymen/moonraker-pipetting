@@ -330,6 +330,7 @@ class WebSocket(WebSocketHandler, BaseRemoteConnection):
     async def write_to_socket(
         self, message: Union[str, Dict[str, Any]]
     ) -> None:
+        # logging.info(f"Sending message to socket: {message}")
         try:
             await self.write_message(message)
         except WebSocketClosedError:

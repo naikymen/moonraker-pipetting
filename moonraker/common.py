@@ -464,6 +464,7 @@ class JsonRPC:
             responses: List[Dict[str, Any]] = []
             for item in obj:
                 self._log_request(item)
+                # NOTE: "resp" can be a "build_error" dictionary.
                 resp = await self.process_object(item, conn)
                 if resp is not None:
                     self._log_response(resp)
@@ -472,6 +473,7 @@ class JsonRPC:
                 return json.dumps(responses)
         else:
             self._log_request(obj)
+            # NOTE: "resp" can be a "build_error" dictionary.
             response = await self.process_object(obj, conn)
             if response is not None:
                 self._log_response(response)
@@ -501,6 +503,8 @@ class JsonRPC:
             if not isinstance(params, dict):
                 return self.build_error(
                     -32602, f"Invalid params:", req_id, True)
+        
+        # NOTE: "response" can be a "build_error" dictionary.
         response = await self.execute_method(method, req_id, conn, params)
         return response
 
@@ -548,7 +552,17 @@ class JsonRPC:
                 code = -32601
             elif code == 401:
                 code = -32602
-            return self.build_error(code, str(e), req_id, True)
+            
+            # NOTE: This is the line causing the message dict to be sent
+            #       as a string through the websocket.
+            # Original behaviour.
+            # msg = str(e)
+            # Trying to get the object through with at least some type checking.
+            # msg = self.check_error_msg_type(e.args[0])
+            # Ended up just passing msg "as is". The type hint in "build_error"
+            # was updated, so type checkers don't complain.
+            result = self.build_error(code=code, msg=msg, req_id=req_id, is_exc=True)
+            return result
         except Exception as e:
             return self.build_error(-31000, str(e), req_id, True)
 
@@ -566,7 +580,8 @@ class JsonRPC:
 
     def build_error(self,
                     code: int,
-                    msg: str,
+                    # NOTE: Trying to get the error dict object through.
+                    msg: Union[str, Dict[str, str]],
                     req_id: Optional[int] = None,
                     is_exc: bool = False
                     ) -> Dict[str, Any]:
@@ -580,3 +595,16 @@ class JsonRPC:
             'error': {'code': code, 'message': msg},
             'id': req_id
         }
+    
+    # NOTE: This is futile, python does not and will not enforce
+    #       "static type checking".
+    # @staticmethod
+    # def check_error_msg_type(msg):
+    #     # https://stackoverflow.com/a/55503885/11524079
+    #     def foo(msg: Union[str, Dict[str, str]]):
+    #         pass
+    #     try:
+    #         foo(msg)
+    #     except (TypeError, AttributeError) as err:
+    #         return str(msg)
+    #     return msg
