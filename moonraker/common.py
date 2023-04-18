@@ -561,6 +561,7 @@ class JsonRPC:
             # msg = self.check_error_msg_type(e.args[0])
             # Ended up just passing msg "as is". The type hint in "build_error"
             # was updated, so type checkers don't complain.
+            msg = e.args[0]
             result = self.build_error(code=code, msg=msg, req_id=req_id, is_exc=True)
             return result
         except Exception as e:

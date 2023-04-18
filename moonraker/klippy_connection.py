@@ -462,6 +462,8 @@ class KlippyConnection:
         if 'result' in cmd:
             result = cmd['result']
             if not result:
+                # NOTE: This is the "ok" returned to gcode script commands,
+                #       such as "G0" or "SET_KINEMATIC_POSITION".
                 result = "ok"
         else:
             err = cmd.get('error', "Malformed Klippy Response")
