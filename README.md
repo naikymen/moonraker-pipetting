@@ -1,11 +1,38 @@
 # Moonraker fork for the Pipetting-bot
 [![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
 
-For use with: https://github.com/naikymen/klipper-homing-extruder
+For use with Klipper forks, such as: https://gitlab.com/pipettin-bot/forks/klipper
 
 To accomplish the following:
 
 ![Screenshot_20230222_203926.png](./docs/imgs/Screenshot_20230222_203926.png)
+
+## Changes
+
+Most changes were made to:
+
+- [update_manager.py](./moonraker/components/update_manager/update_manager.py): parse a "klipper" section.
+- [base_config.py](./moonraker/components/update_manager/base_config.py): updated default values.
+- And other minor changes.
+
+In order to support a custom Klipper fork, configured more or less like this:
+
+```
+# Custom Klipper config for the update manager.
+# Based on values at "moonraker/base_config.py".
+# See: https://github.com/Arksine/moonraker/issues/615
+[update_manager klipper]
+type: git_repo
+channel: dev
+origin: https://gitlab.com/pipettin-bot/forks/klipper.git
+primary_branch: pipetting
+# env: /home/pi/klippy-env/bin/python
+# requirements: scripts/klippy-requirements.txt
+# install_script: scripts/install-octopi.sh
+host_repo: https://gitlab.com/pipettin-bot/forks/klipper
+is_system_service: True
+managed_services: klipper
+```
 
 #  Moonraker - API Web Server for Klipper
 
