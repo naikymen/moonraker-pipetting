@@ -13,7 +13,8 @@ Most changes were made to:
 
 - [update_manager.py](./moonraker/components/update_manager/update_manager.py): parse a "klipper" section.
 - [base_config.py](./moonraker/components/update_manager/base_config.py): updated default values.
-- And other minor changes.
+- Working on an install script for Arch, notes, and minor miscelaneous stuff.
+- Full changes [at GitLab](https://gitlab.com/pipettin-bot/forks/moonraker/-/compare/master...pipetting?from_project_id=42281750&straight=false).
 
 In order to support a custom Klipper fork, configured more or less like this:
 
