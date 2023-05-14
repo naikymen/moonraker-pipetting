@@ -16,7 +16,7 @@ Most changes were made to:
 - Working on an install script for Arch, notes, and minor miscelaneous stuff.
 - Full changes [at GitLab](https://gitlab.com/pipettin-bot/forks/moonraker/-/compare/master...pipetting?from_project_id=42281750&straight=false).
 
-In order to support a custom Klipper fork, configured more or less like this:
+In order to support a custom Klipper fork, Moonraker must be configured more or less like this: [moonraker.conf](./docs/moonraker.conf)
 
 ```
 # Custom Klipper config for the update manager.
@@ -34,6 +34,10 @@ host_repo: https://gitlab.com/pipettin-bot/forks/klipper
 is_system_service: True
 managed_services: klipper
 ```
+
+Notes:
+- The OctoPrint stuff can be ommited.
+- A full config reference is available at the upstream docs: https://moonraker.readthedocs.io/
 
 #  Moonraker - API Web Server for Klipper
 
