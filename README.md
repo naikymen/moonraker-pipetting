@@ -1,3 +1,13 @@
+# Moonraker fork for the Pipetting-bot
+
+Using Klipper for lab automation: https://gitlab.com/pipettin-bot/
+
+## Development setup notes for Arch
+
+A development setup for Arch Linux is achievable without giving it sudo permissions, including a simulavr hardware-less setup.
+
+Instructions at: https://gitlab.com/pipettin-bot/forks/klipper-stack
+
 [![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
 
 #  Moonraker - API Web Server for Klipper
